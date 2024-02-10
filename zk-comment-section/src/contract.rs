@@ -13,7 +13,7 @@ use pbc_contract_common::context::ContractContext;
 use pbc_contract_common::events::EventGroup;
 use pbc_contract_common::zk::ZkClosed;
 use pbc_contract_common::zk::{CalculationStatus, SecretVarId, ZkInputDef, ZkState, ZkStateChange};
-use pbc_zk::Sbi64;
+use pbc_zk::Sbi32;
 use read_write_rpc_derive::ReadWriteRPC;
 use read_write_state_derive::ReadWriteState;
 
@@ -22,13 +22,13 @@ use read_write_state_derive::ReadWriteState;
 #[repr(u8)]
 enum SecretVarType {
     #[discriminant(0)]
-    Salary {},
+    Message {},
     #[discriminant(1)]
     ConcatResult {},
 }
 
-/// Number of employees to wait for before starting computation. A value of 2 or below is useless.
-const MIN_NUM_EMPLOYEES: u32 = 3;
+/// u32 / u8 = 4
+const MAX_NUM_COMMENTS: u32 = 4;
 
 /// This contract's state
 #[state]
@@ -36,9 +36,9 @@ struct ContractState {
     /// Address allowed to start computation
     administrator: Address,
     /// Will contain the result (average) when computation is complete
-    concat_message_result: Option<u64>,
+    concat_message_result: Option<u32>,
     /// Will contain the number of employees after starting the computation
-    num_employees: Option<u32>,
+    num_comments: Option<u32>,
 }
 
 /// Initializes contract
@@ -49,20 +49,20 @@ fn initialize(ctx: ContractContext, zk_state: ZkState<SecretVarType>) -> Contrac
     ContractState {
         administrator: ctx.sender,
         concat_message_result: None,
-        num_employees: None,
+        num_comments: None,
     }
 }
 
 /// Adds another salary variable
 #[zk_on_secret_input(shortname = 0x40)]
-fn add_salary(
+fn add_message(
     context: ContractContext,
     state: ContractState,
     zk_state: ZkState<SecretVarType>,
 ) -> (
     ContractState,
     Vec<EventGroup>,
-    ZkInputDef<SecretVarType, Sbi64>,
+    ZkInputDef<SecretVarType, Sbi32>,
 ) {
     assert!(
         zk_state
@@ -73,7 +73,7 @@ fn add_salary(
         "Each address is only allowed to send one salary variable. Sender: {:?}",
         context.sender
     );
-    let input_def = ZkInputDef::with_metadata(SecretVarType::Salary {});
+    let input_def = ZkInputDef::with_metadata(SecretVarType::Message {});
     (state, vec![], input_def)
 }
 
@@ -94,7 +94,7 @@ fn inputted_variable(
 ///
 /// The averaging computation is automatic beyond this call, involving several steps, as described in the module documentation.
 #[action(shortname = 0x01, zk = true)]
-fn compute_average_salary(
+fn compute_concat_message(
     context: ContractContext,
     mut state: ContractState,
     zk_state: ZkState<SecretVarType>,
@@ -110,10 +110,10 @@ fn compute_average_salary(
         zk_state.calculation_state,
     );
 
-    let num_employees = zk_state.secret_variables.len() as u32;
-    assert!(num_employees >= MIN_NUM_EMPLOYEES , "At least {MIN_NUM_EMPLOYEES} employees must have submitted and confirmed their inputs, before starting computation, but had only {num_employees}");
+    let num_comments = zk_state.secret_variables.len() as u32;
+    assert!(num_comments <= MAX_NUM_COMMENTS , "At most {MAX_NUM_COMMENTS} comments can be encoded, before starting computation, but had only {num_comments}");
 
-    state.num_employees = Some(num_employees);
+    state.num_comments = Some(num_comments);
     (
         state,
         vec![],
@@ -127,7 +127,7 @@ fn compute_average_salary(
 ///
 /// The only thing we do is to instantly open/declassify the output variables.
 #[zk_on_compute_complete]
-fn sum_compute_complete(
+fn concat_compute_complete(
     context: ContractContext,
     state: ContractState,
     zk_state: ZkState<SecretVarType>,
@@ -146,7 +146,7 @@ fn sum_compute_complete(
 ///
 /// We can now read the sum variable, and compute the average, which will be our final result.
 #[zk_on_variables_opened]
-fn open_sum_variable(
+fn open_concat_variable(
     context: ContractContext,
     mut state: ContractState,
     zk_state: ZkState<SecretVarType>,
@@ -161,20 +161,19 @@ fn open_sum_variable(
         .get_variable(*opened_variables.get(0).unwrap())
         .unwrap();
 
-    let result = read_variable_u64_le(&opened_variable);
+    let result = read_variable_u32_le(&opened_variable);
 
     let mut zk_state_changes = vec![];
     if let SecretVarType::ConcatResult {} = opened_variable.metadata {
-        let num_employees = state.num_employees.unwrap();
         state.concat_message_result = Some(result);
         zk_state_changes = vec![ZkStateChange::ContractDone];
     }
     (state, vec![], zk_state_changes)
 }
 
-/// Reads a variable's data as an u64.
-fn read_variable_u64_le(sum_variable: &ZkClosed<SecretVarType>) -> u64 {
-    let mut buffer = [0u8; 8];
+/// Reads a variable's data as an u32.
+fn read_variable_u32_le(sum_variable: &ZkClosed<SecretVarType>) -> u32 {
+    let mut buffer = [0u8; 4];
     buffer.copy_from_slice(sum_variable.data.as_ref().unwrap().as_slice());
-    <u64>::from_le_bytes(buffer)
+    <u32>::from_le_bytes(buffer)
 }

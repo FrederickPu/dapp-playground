@@ -29,6 +29,7 @@ enum SecretVarType {
 
 /// Number of employees to wait for before starting computation. A value of 2 or below is useless.
 const MIN_NUM_EMPLOYEES: u32 = 3;
+const MAX_NUM_COMMENTS: u32 = 3;
 
 /// This contract's state
 #[state]
