@@ -15,4 +15,4 @@ This implementation works in following steps:
 possess, including:
 - An allowlist over salarymen.
 - Check that each address only sends a single variable.
-- Sort message by integer size before concatonating them in order to ensure that who commented what can't be inferred by looking at the posting order.
+- Sort messages by integer size before concatonating them in order to ensure that who commented what can't be inferred by looking at the posting order.
