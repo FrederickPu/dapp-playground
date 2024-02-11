@@ -8,7 +8,7 @@ This implementation works in following steps:
 3. Once enough salaries have been received, the contract owner can start the ZK computation.
 4. The Zk computation concatenates all of the messages together.
 5. Once the zk computation is complete, the contract will publicize the the concatonated message variable.
-6. Once the summed variable is public, the contract will compute the concatonated message and store it in
+6. Once the concatonated message variable is public, the contract will compute the concatonated message and store it in
    the state, such that the value can be read by all.
 
 **NOTE**: This contract is missing several features that a production ready contract should
