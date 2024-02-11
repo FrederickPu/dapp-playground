@@ -111,7 +111,7 @@ fn compute_concat_message(
     );
 
     let num_comments = zk_state.secret_variables.len() as u32;
-    assert!(num_comments <= MAX_NUM_COMMENTS , "At most {MAX_NUM_COMMENTS} comments can be encoded, before starting computation, but had only {num_comments}");
+    assert!(num_comments <= MAX_NUM_COMMENTS , "At most {MAX_NUM_COMMENTS} comments can be encoded, before starting computation, but had {num_comments}");
 
     state.num_comments = Some(num_comments);
     (

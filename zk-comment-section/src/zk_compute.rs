@@ -8,6 +8,7 @@ const MESSAGE_VARIABLE_KIND: u8 = 0u8;
 /// ### Returns:
 ///
 /// The concat of the secret (message) variables.
+/// TODO :: sort the messages by size before concating so that identity cannot be inferred based on sending order.
 #[zk_compute(shortname = 0x61)]
 pub fn concat_everything() -> Sbi32 {
     // Initialize state
@@ -21,7 +22,7 @@ pub fn concat_everything() -> Sbi32 {
             let message = load_sbi::<Sbi32>(variable_id);
             // each message is of length 8
             concated_message = concated_message + message * Sbi32::from(shift);
-            shift = shift * 8;
+            shift = shift * 256;
         }
     }
 
