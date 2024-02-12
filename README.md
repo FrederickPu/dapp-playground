@@ -33,6 +33,11 @@ just remember the private keys, because they are not saved when you delete the c
 Read how addresses works
 for [accounts and smart contracts](https://partisiablockchain.gitlab.io/documentation/pbc-fundamentals/dictionary.html#address).
 
+## Codegen
+
+`cargo partisia-contract abi codegen --ts ./target/wasm32-unknown-unknown/release/comment_section.abi 
+./comment-section-frontend/src/main/contract/CommentSectionGenerated.ts`
+
 ## It is your own online personalized DApp playground
 
 To use the codespace to develop your own DApps, fork the repository.
